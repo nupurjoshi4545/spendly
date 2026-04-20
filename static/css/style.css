@@ -633,6 +633,69 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ------------------------------------------------------------------ */
+/* Video modal                                                         */
+/* ------------------------------------------------------------------ */
+
+.video-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.72);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.video-modal-overlay.is-open {
+    display: flex;
+}
+
+.video-modal-box {
+    position: relative;
+    width: min(860px, 92vw);
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+}
+
+.video-modal-close {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.75rem;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.55);
+    border: none;
+    color: #fff;
+    font-size: 1.5rem;
+    line-height: 1;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.video-modal-close:hover {
+    background: rgba(0, 0, 0, 0.85);
+}
+
+.video-modal-frame {
+    position: relative;
+    padding-top: 56.25%;
+}
+
+.video-modal-frame iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+/* ------------------------------------------------------------------ */
 /* Responsive                                                          */
 /* ------------------------------------------------------------------ */
 
