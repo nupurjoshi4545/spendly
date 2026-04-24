@@ -1,6 +1,6 @@
 import sqlite3
 import os
-from werkzeug.security import generate_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 def get_db():
@@ -74,3 +74,32 @@ def seed_db():
 
     conn.commit()
     conn.close()
+
+
+def create_user(name, email, password):
+    email = email.lower()
+    password_hash = generate_password_hash(password)
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            'INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)',
+            (name, email, password_hash)
+        )
+        conn.commit()
+        user_id = cursor.lastrowid
+        return user_id
+    except sqlite3.IntegrityError:
+        return None
+    finally:
+        conn.close()
+
+
+def get_user_by_email(email):
+    email = email.lower()
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM users WHERE email = ?', (email,))
+    user = cursor.fetchone()
+    conn.close()
+    return user
