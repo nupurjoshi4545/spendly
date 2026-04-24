@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, abort
+from flask import Flask, render_template, request, redirect, url_for, session, abort, flash
 from database.db import get_db, init_db, seed_db, create_user
 
 app = Flask(__name__)
@@ -22,22 +22,28 @@ def register():
     name = request.form.get("name", "").strip()
     email = request.form.get("email", "").strip().lower()
     password = request.form.get("password", "")
+    confirm_password = request.form.get("confirm_password", "")
 
-    if not name or not email or not password:
-        return render_template("register.html", error="All fields are required.")
+    if not name or not email or not password or not confirm_password:
+        flash("All fields are required.")
+        return render_template("register.html")
     if "@" not in email:
-        return render_template("register.html", error="Enter a valid email address.")
+        flash("Enter a valid email address.")
+        return render_template("register.html")
+    if password != confirm_password:
+        flash("Passwords do not match.")
+        return render_template("register.html")
     if len(password) < 6:
-        return render_template("register.html", error="Password must be at least 6 characters.")
+        flash("Password must be at least 6 characters.")
+        return render_template("register.html")
 
     user_id = create_user(name, email, password)
     if user_id is None:
-        return render_template("register.html", error="An account with that email already exists.")
+        flash("Email already registered.")
+        return render_template("register.html")
 
-    session["user_id"] = user_id
-    session["user_name"] = name
-
-    return redirect(url_for("landing"))
+    flash("Account created successfully! Please log in.")
+    return redirect(url_for("login"))
 
 
 @app.route("/login")
