@@ -4,12 +4,83 @@
 
 {% block content %}
 <section class="profile-section">
-    <div class="profile-card">
-        <div class="profile-avatar">{{ user.name[0].upper() }}</div>
-        <h1 class="profile-name">{{ user.name }}</h1>
-        <p class="profile-email">{{ user.email }}</p>
-        <div class="profile-meta">
-            <span>Member since {{ user.created_at[:10] }}</span>
+    <div class="profile-inner">
+        <div class="profile-header">
+            <div class="profile-user-info">
+                <div class="profile-avatar">
+                    {% set initials = (user.name.split()[0][0] + user.name.split()[-1][0]).upper() if ' ' in user.name else user.name[0].upper() %}
+                    {{ initials }}
+                </div>
+                <div class="profile-user-details">
+                    <h1 class="profile-name">{{ user.name }}</h1>
+                    <p class="profile-email">{{ user.email }}</p>
+                    <p class="profile-meta">Member since {{ user.created_at[:10] }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-stats">
+            <div class="stat-card">
+                <span class="stat-label">TOTAL SPENT</span>
+                <span class="stat-value">${{ "%.2f"|format(stats.total_spent) }}</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">TRANSACTIONS</span>
+                <span class="stat-value">{{ stats.transaction_count }}</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">TOP CATEGORY</span>
+                <span class="stat-value">{{ stats.top_category or "—" }}</span>
+            </div>
+        </div>
+
+        <div class="profile-content">
+            <div class="transactions-section">
+                <h2 class="section-title">Recent Transactions</h2>
+                <table class="transactions-table">
+                    <thead>
+                        <tr>
+                            <th>DATE</th>
+                            <th>DESCRIPTION</th>
+                            <th>CATEGORY</th>
+                            <th>AMOUNT</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for expense in expenses[:5] %}
+                        <tr>
+                            <td class="date-cell">{{ expense['date'] }}</td>
+                            <td class="description-cell">{{ expense['description'] }}</td>
+                            <td class="category-cell">
+                                <span class="category-badge category-{{ expense['category'].lower() }}">
+                                    {{ expense['category'] }}
+                                </span>
+                            </td>
+                            <td class="amount-cell">${{ "%.2f"|format(expense['amount']) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="breakdown-section">
+                <h2 class="section-title">By Category</h2>
+                <div class="category-bars">
+                    {% set total = stats.total_spent %}
+                    {% for category_data in categories %}
+                        {% set category_name = category_data.category %}
+                        {% set category_amount = category_data.total_amount %}
+                        {% set percentage = (category_amount / total * 100) if total > 0 else 0 %}
+                        <div class="category-bar-row">
+                            <span class="category-name">{{ category_name }}</span>
+                            <div class="category-bar-container">
+                                <div class="category-bar category-bar-{{ category_name.lower() }}" style="width: {{ percentage }}%"></div>
+                            </div>
+                            <span class="category-amount">${{ "%.2f"|format(category_amount) }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
     </div>
 </section>
