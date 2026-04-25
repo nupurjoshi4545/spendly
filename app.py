@@ -1,8 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, session, abort, flash
 from werkzeug.security import check_password_hash
 from database.db import (
-    get_db, init_db, seed_db, create_user, get_user_by_email, get_user_by_id,
-    get_user_expenses, get_user_stats, get_category_breakdown
+    get_db, init_db, seed_db, create_user, get_user_by_email, get_user_by_id as _db_get_user
+)
+from database.queries import (
+    get_user_by_id, get_summary_stats, get_recent_transactions, get_category_breakdown
 )
 
 app = Flask(__name__)
@@ -13,7 +15,7 @@ app.secret_key = 'dev-secret-key-change-in-production'
 def inject_user():
     user = None
     if session.get("user_id"):
-        user = get_user_by_id(session["user_id"])
+        user = _db_get_user(session["user_id"])
     return {'current_user': user}
 
 
@@ -108,13 +110,13 @@ def profile():
     user = get_user_by_id(session["user_id"])
     if user is None:
         abort(404)
-    expenses = get_user_expenses(session["user_id"])
-    stats = get_user_stats(session["user_id"])
+    transactions = get_recent_transactions(session["user_id"])
+    stats = get_summary_stats(session["user_id"])
     categories = get_category_breakdown(session["user_id"])
     return render_template(
         "profile.html",
         user=user,
-        expenses=expenses,
+        expenses=transactions,
         stats=stats,
         categories=categories
     )

@@ -58,12 +58,12 @@ def seed_db():
 
     expenses = [
         (user_id, 12.50, 'Food', '2026-04-01', 'Lunch at cafe'),
-        (user_id, 45.00, 'Transport', '2026-04-03', 'Uber rides'),
+        (user_id, 35.00, 'Transport', '2026-04-03', 'Uber rides'),
         (user_id, 120.00, 'Bills', '2026-04-05', 'Electricity bill'),
         (user_id, 30.00, 'Health', '2026-04-08', 'Pharmacy'),
         (user_id, 60.00, 'Entertainment', '2026-04-10', 'Movie tickets'),
-        (user_id, 85.00, 'Shopping', '2026-04-14', 'Clothing'),
-        (user_id, 15.75, 'Food', '2026-04-17', 'Grocery run'),
+        (user_id, 55.00, 'Shopping', '2026-04-14', 'Clothing'),
+        (user_id, 13.74, 'Food', '2026-04-17', 'Grocery run'),
         (user_id, 20.00, 'Other', '2026-04-20', 'Miscellaneous expense'),
     ]
 
