@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Profile — Spendly{% endblock %}
+
+{% block content %}
+<section class="profile-section">
+    <div class="profile-card">
+        <div class="profile-avatar">{{ user.name[0].upper() }}</div>
+        <h1 class="profile-name">{{ user.name }}</h1>
+        <p class="profile-email">{{ user.email }}</p>
+        <div class="profile-meta">
+            <span>Member since {{ user.created_at[:10] }}</span>
+        </div>
+    </div>
+</section>
+{% endblock %}
