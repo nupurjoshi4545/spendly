@@ -1,9 +1,20 @@
 from flask import Flask, render_template, request, redirect, url_for, session, abort, flash
 from werkzeug.security import check_password_hash
-from database.db import get_db, init_db, seed_db, create_user, get_user_by_email
+from database.db import (
+    get_db, init_db, seed_db, create_user, get_user_by_email, get_user_by_id,
+    get_user_expenses, get_user_stats, get_category_breakdown
+)
 
 app = Flask(__name__)
 app.secret_key = 'dev-secret-key-change-in-production'
+
+
+@app.context_processor
+def inject_user():
+    user = None
+    if session.get("user_id"):
+        user = get_user_by_id(session["user_id"])
+    return {'current_user': user}
 
 
 # ------------------------------------------------------------------ #
@@ -67,7 +78,7 @@ def login():
         return render_template("login.html")
 
     session["user_id"] = user["id"]
-    return redirect(url_for("landing"))
+    return redirect(url_for("profile"))
 
 
 @app.route("/terms")
@@ -92,7 +103,21 @@ def logout():
 
 @app.route("/profile")
 def profile():
-    return "Profile page — coming in Step 4"
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+    user = get_user_by_id(session["user_id"])
+    if user is None:
+        abort(404)
+    expenses = get_user_expenses(session["user_id"])
+    stats = get_user_stats(session["user_id"])
+    categories = get_category_breakdown(session["user_id"])
+    return render_template(
+        "profile.html",
+        user=user,
+        expenses=expenses,
+        stats=stats,
+        categories=categories
+    )
 
 
 @app.route("/expenses/add")

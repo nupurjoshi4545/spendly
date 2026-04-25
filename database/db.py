@@ -103,3 +103,67 @@ def get_user_by_email(email):
     user = cursor.fetchone()
     conn.close()
     return user
+
+
+def get_user_by_id(user_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM users WHERE id = ?', (user_id,))
+    user = cursor.fetchone()
+    conn.close()
+    return user
+
+
+def get_user_expenses(user_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        'SELECT * FROM expenses WHERE user_id = ? ORDER BY date DESC',
+        (user_id,)
+    )
+    expenses = cursor.fetchall()
+    conn.close()
+    return expenses
+
+
+def get_user_stats(user_id):
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        'SELECT SUM(amount) FROM expenses WHERE user_id = ?',
+        (user_id,)
+    )
+    total_spent = cursor.fetchone()[0] or 0.0
+
+    cursor.execute(
+        'SELECT COUNT(*) FROM expenses WHERE user_id = ?',
+        (user_id,)
+    )
+    transaction_count = cursor.fetchone()[0] or 0
+
+    cursor.execute(
+        'SELECT category, SUM(amount) FROM expenses WHERE user_id = ? GROUP BY category ORDER BY SUM(amount) DESC LIMIT 1',
+        (user_id,)
+    )
+    top_result = cursor.fetchone()
+    top_category = top_result[0] if top_result else None
+
+    conn.close()
+    return {
+        'total_spent': total_spent,
+        'transaction_count': transaction_count,
+        'top_category': top_category
+    }
+
+
+def get_category_breakdown(user_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        'SELECT category, SUM(amount) as total_amount FROM expenses WHERE user_id = ? GROUP BY category ORDER BY total_amount DESC',
+        (user_id,)
+    )
+    categories = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return categories
