@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, abort, flash
 from werkzeug.security import check_password_hash
+from datetime import date, timedelta
 from database.db import (
     get_db, init_db, seed_db, create_user, get_user_by_email, get_user_by_id as _db_get_user
 )
@@ -110,15 +111,58 @@ def profile():
     user = get_user_by_id(session["user_id"])
     if user is None:
         abort(404)
-    transactions = get_recent_transactions(session["user_id"])
-    stats = get_summary_stats(session["user_id"])
-    categories = get_category_breakdown(session["user_id"])
+
+    def parse_date(val):
+        if not val:
+            return None
+        try:
+            from datetime import datetime
+            datetime.strptime(val, "%Y-%m-%d")
+            return val
+        except ValueError:
+            return None
+
+    date_from = parse_date(request.args.get("date_from", "").strip())
+    date_to = parse_date(request.args.get("date_to", "").strip())
+
+    if date_from and date_to and date_from > date_to:
+        flash("Start date must be before end date.")
+        date_from = date_to = None
+
+    today = date.today()
+    this_month_start = today.replace(day=1).isoformat()
+    last_3_start = (today - timedelta(days=90)).isoformat()
+    last_6_start = (today - timedelta(days=180)).isoformat()
+    today_str = today.isoformat()
+
+    # Detect active preset
+    active_preset = None
+    if date_from is None and date_to is None:
+        active_preset = "all"
+    elif date_from == this_month_start and date_to == today_str:
+        active_preset = "this_month"
+    elif date_from == last_3_start and date_to == today_str:
+        active_preset = "last_3"
+    elif date_from == last_6_start and date_to == today_str:
+        active_preset = "last_6"
+
+    transactions = get_recent_transactions(session["user_id"], date_from=date_from, date_to=date_to)
+    stats = get_summary_stats(session["user_id"], date_from=date_from, date_to=date_to)
+    categories = get_category_breakdown(session["user_id"], date_from=date_from, date_to=date_to)
+
     return render_template(
         "profile.html",
         user=user,
         expenses=transactions,
         stats=stats,
-        categories=categories
+        categories=categories,
+        date_from=date_from or "",
+        date_to=date_to or "",
+        active_preset=active_preset,
+        this_month_start=this_month_start,
+        last_3_start=last_3_start,
+        last_6_start=last_6_start,
+        today_str=today_str,
     )
 
 

@@ -2,6 +2,10 @@
 
 {% block title %}Profile — Spendly{% endblock %}
 
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+{% endblock %}
+
 {% block content %}
 <section class="profile-section">
     <div class="profile-inner">
@@ -19,10 +23,29 @@
             </div>
         </div>
 
+        <div class="filter-bar">
+            <div class="filter-presets">
+                <a href="{{ url_for('profile') }}"
+                   class="preset-btn{% if active_preset == 'all' %} preset-btn--active{% endif %}">All Time</a>
+                <a href="{{ url_for('profile', date_from=this_month_start, date_to=today_str) }}"
+                   class="preset-btn{% if active_preset == 'this_month' %} preset-btn--active{% endif %}">This Month</a>
+                <a href="{{ url_for('profile', date_from=last_3_start, date_to=today_str) }}"
+                   class="preset-btn{% if active_preset == 'last_3' %} preset-btn--active{% endif %}">Last 3 Months</a>
+                <a href="{{ url_for('profile', date_from=last_6_start, date_to=today_str) }}"
+                   class="preset-btn{% if active_preset == 'last_6' %} preset-btn--active{% endif %}">Last 6 Months</a>
+            </div>
+            <form class="filter-custom" method="GET" action="{{ url_for('profile') }}">
+                <input type="date" name="date_from" value="{{ date_from }}" class="filter-date-input">
+                <span class="filter-to-label">to</span>
+                <input type="date" name="date_to" value="{{ date_to }}" class="filter-date-input">
+                <button type="submit" class="filter-apply-btn">Apply</button>
+            </form>
+        </div>
+
         <div class="profile-stats">
             <div class="stat-card">
                 <span class="stat-label">TOTAL SPENT</span>
-                <span class="stat-value">₹{{ "%.2f"|format(stats.total_spent) }}</span>
+                <span class="stat-value">${{ "%.2f"|format(stats.total_spent) }}</span>
             </div>
             <div class="stat-card">
                 <span class="stat-label">TRANSACTIONS</span>
@@ -47,7 +70,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for expense in expenses[:5] %}
+                        {% for expense in expenses %}
                         <tr>
                             <td class="date-cell">{{ expense['date'] }}</td>
                             <td class="description-cell">{{ expense['description'] }}</td>
@@ -56,8 +79,10 @@
                                     {{ expense['category'] }}
                                 </span>
                             </td>
-                            <td class="amount-cell">₹{{ "%.2f"|format(expense['amount']) }}</td>
+                            <td class="amount-cell">${{ "%.2f"|format(expense['amount']) }}</td>
                         </tr>
+                        {% else %}
+                        <tr><td colspan="4">No expenses found for this date range.</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -72,7 +97,7 @@
                             <div class="category-bar-container">
                                 <div class="category-bar category-bar-{{ category_data.name.lower() }}" style="width: {{ category_data.pct }}%"></div>
                             </div>
-                            <span class="category-amount">₹{{ "%.2f"|format(category_data.amount) }}</span>
+                            <span class="category-amount">${{ "%.2f"|format(category_data.amount) }}</span>
                         </div>
                     {% endfor %}
                 </div>
