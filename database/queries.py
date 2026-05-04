@@ -39,78 +39,71 @@ def get_user_by_id(user_id):
         conn.close()
 
 
-def get_recent_transactions(user_id, limit=10):
-    """
-    Retrieve recent transactions for a user, ordered by date (newest first).
-
-    Args:
-        user_id: The user's ID
-        limit: Maximum number of transactions to return (default: 10)
-
-    Returns:
-        A list of dicts with keys: date, description, category, amount
-        Empty list if the user has no expenses
-    """
+def get_recent_transactions(user_id, limit=10, date_from=None, date_to=None):
     conn = get_db()
     try:
         cursor = conn.cursor()
-        cursor.execute(
-            "SELECT id, date, description, category, amount FROM expenses WHERE user_id = ? ORDER BY date DESC LIMIT ?",
-            (user_id, limit)
-        )
+        filtering = date_from is not None or date_to is not None
+
+        sql = "SELECT id, date, description, category, amount FROM expenses WHERE user_id = ?"
+        params = [user_id]
+        if date_from:
+            sql += " AND date >= ?"
+            params.append(date_from)
+        if date_to:
+            sql += " AND date <= ?"
+            params.append(date_to)
+        sql += " ORDER BY date DESC"
+        if not filtering:
+            sql += " LIMIT ?"
+            params.append(limit)
+
+        cursor.execute(sql, params)
         rows = cursor.fetchall()
 
-        # Convert rows to list of dicts
         transactions = []
-        if rows:
-            for row in rows:
-                transactions.append({
-                    'date': row[1],
-                    'description': row[2],
-                    'category': row[3],
-                    'amount': row[4]
-                })
+        for row in rows:
+            transactions.append({
+                'date': row[1],
+                'description': row[2],
+                'category': row[3],
+                'amount': row[4]
+            })
 
         return transactions
     finally:
         conn.close()
 
 
-def get_summary_stats(user_id):
-    """
-    Retrieve summary statistics for a user's expenses.
-
-    Args:
-        user_id: The user's ID
-
-    Returns:
-        A dict with keys:
-            - total_spent (float): Sum of all expenses; 0.0 if no expenses
-            - transaction_count (int): Count of all expenses; 0 if no expenses
-            - top_category (str): Category with highest sum; "—" if no expenses
-    """
+def get_summary_stats(user_id, date_from=None, date_to=None):
     conn = get_db()
     try:
         cursor = conn.cursor()
 
-        # Get total spent
+        date_clause = ""
+        date_params = []
+        if date_from:
+            date_clause += " AND date >= ?"
+            date_params.append(date_from)
+        if date_to:
+            date_clause += " AND date <= ?"
+            date_params.append(date_to)
+
         cursor.execute(
-            "SELECT SUM(amount) FROM expenses WHERE user_id = ?",
-            (user_id,)
+            f"SELECT SUM(amount) FROM expenses WHERE user_id = ?{date_clause}",
+            [user_id] + date_params
         )
         total_spent = cursor.fetchone()[0] or 0.0
 
-        # Get transaction count
         cursor.execute(
-            "SELECT COUNT(*) FROM expenses WHERE user_id = ?",
-            (user_id,)
+            f"SELECT COUNT(*) FROM expenses WHERE user_id = ?{date_clause}",
+            [user_id] + date_params
         )
         transaction_count = cursor.fetchone()[0] or 0
 
-        # Get top category
         cursor.execute(
-            "SELECT category FROM expenses WHERE user_id = ? GROUP BY category ORDER BY SUM(amount) DESC LIMIT 1",
-            (user_id,)
+            f"SELECT category FROM expenses WHERE user_id = ?{date_clause} GROUP BY category ORDER BY SUM(amount) DESC LIMIT 1",
+            [user_id] + date_params
         )
         top_category_row = cursor.fetchone()
         top_category = top_category_row[0] if top_category_row else "—"
@@ -124,30 +117,23 @@ def get_summary_stats(user_id):
         conn.close()
 
 
-def get_category_breakdown(user_id):
-    """
-    Retrieve category breakdown for a user's expenses.
-
-    Args:
-        user_id: The user's ID
-
-    Returns:
-        A list of dicts with keys:
-            - name (str): Category name
-            - amount (float): Total amount spent in category
-            - pct (int): Percentage of total (integer, rounded)
-        Ordered by amount descending (highest first)
-        Percentages are rounded and adjusted so they sum to exactly 100
-        Empty list if the user has no expenses
-    """
+def get_category_breakdown(user_id, date_from=None, date_to=None):
     conn = get_db()
     try:
         cursor = conn.cursor()
 
-        # Query expenses grouped by category, ordered by amount descending
+        date_clause = ""
+        date_params = []
+        if date_from:
+            date_clause += " AND date >= ?"
+            date_params.append(date_from)
+        if date_to:
+            date_clause += " AND date <= ?"
+            date_params.append(date_to)
+
         cursor.execute(
-            "SELECT category, SUM(amount) as total FROM expenses WHERE user_id = ? GROUP BY category ORDER BY total DESC",
-            (user_id,)
+            f"SELECT category, SUM(amount) as total FROM expenses WHERE user_id = ?{date_clause} GROUP BY category ORDER BY total DESC",
+            [user_id] + date_params
         )
         rows = cursor.fetchall()
 
